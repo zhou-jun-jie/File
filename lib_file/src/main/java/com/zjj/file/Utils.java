@@ -5,8 +5,10 @@ import android.app.Application;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.TextView;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -73,13 +75,89 @@ public class Utils {
         return true;
     }
 
+    /**
+     * 创建文件
+     *
+     * @param path 文件路径
+     * @return 文件File
+     */
+    public static File createFile(String path) {
+        if (!TextUtils.isEmpty(path)) {
+            File file = new File(path);
+            File parentFile = file.getParentFile();
+            if (null != parentFile && !parentFile.exists()) {
+                parentFile.mkdirs();
+            }
+            if (!file.exists()) {
+                try {
+                    if (file.createNewFile()) {
+                        return file;
+                    } else {
+                        return null;
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            } else {
+                return file;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 递归删除文件夹中的文件，含文件夹
+     * */
+    public static void deleteFileWithDir(File dir) {
+        if (null == dir || !dir.exists() || !dir.isDirectory()) return;
+        for (File file : dir.listFiles()) {
+            if (file.isFile()) file.delete(); // 删除所有文件
+            else if (file.isDirectory()) deleteDirWithFile(file); //文件夹继续递归
+        }
+    }
+
+    /**
+     * 递归删除文件夹中的文件，不含文件夹
+     * */
+    public static void deleteFileWithoutDir(File dir) {
+        if (null == dir || !dir.exists() || !dir.isDirectory()) return;
+        for (File file : dir.listFiles()) {
+            if (file.isFile()) file.delete(); // 删除所有文件
+            else if (file.isDirectory()) deleteFileWithoutDir(file); //文件夹继续递归
+        }
+    }
+
+    private static boolean deleteDirWithFile(File dir) {
+        if (null == dir || !dir.exists())
+            return false;
+        for (File file : dir.listFiles()) {
+            if (file.isFile()) file.delete(); // 删除所有文件
+            else if (file.isDirectory())
+                deleteDirWithFile(file); // 递规的方式删除文件夹
+        }
+        return dir.delete();// 删除目录本身
+    }
+
+    /**
+     * 删除文件
+     * @param path 文件路径
+     * @return 是否成功
+     */
+    public static boolean deleteFile(String path) {
+        if (TextUtils.isEmpty(path)) {
+            return false;
+        }
+        File file = new File(path);
+        return file.delete();
+    }
+
     private static Calendar getCalendar(long time) {
         Date date = new Date(time);
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         return calendar;
     }
-
 
     public static int getYear() {
         return getCalendar(System.currentTimeMillis()).get(Calendar.YEAR);

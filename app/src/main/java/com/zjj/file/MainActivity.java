@@ -12,6 +12,7 @@ import com.yanzhenjie.permission.runtime.Permission;
 import com.zjj.file.bean.StorageBean;
 import com.zjj.file.receiver.StorageReceiver;
 
+import java.io.File;
 import java.security.Permissions;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -57,8 +58,30 @@ public class MainActivity extends AppCompatActivity {
      */
     // 创建根目录,保存在本地
     public void createDir(View view) {
-        String root = Utils.getRootPath("ZJJ_TEST");
-        fileApiImp.createRoot(root);
+        /*String root = Utils.getRootPath("ZJJ_TEST");*/
+        Disposable subscribe = Observable.create(new ObservableOnSubscribe<Boolean>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Boolean> emitter) throws Exception {
+                        emitter.onNext(MemoryManager.getInstance().initSD(MainActivity.this));
+                    }
+                }).subscribeOn(Schedulers.io())
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+                        Log.e("zjj_memory","isSuccess:"+aBoolean);
+                        String rootPath;
+                        if (aBoolean) {
+                            // TODO 测试
+                            LinkedHashMap<String, StorageBean> sdMap = MemoryManager.getInstance().sdMap;
+                            String key = sdMap.keySet().iterator().next();
+                            StorageBean storageBean = sdMap.get(key);
+                            rootPath = storageBean.getPath()+ "/Android/data/" + BuildConfig.APPLICATION_ID + File.separator+"ZJJ_TEST";
+                        } else {
+                            rootPath = Utils.getRootPath("ZJJ_TEST");
+                        }
+                        fileApiImp.createRoot(rootPath);
+                    }
+                });
     }
 
     public void createDirs(View view) {
@@ -108,5 +131,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
+    }
+
+    public void createFile(View view) {
+        Utils.createFile(Utils.getRootPath("ZJJ_TEST")+File.separator+"HaHaHa");
+    }
+
+    public void deleteDir(View view) {
+        Utils.deleteFileWithDir(new File(Utils.getRootPath("ZJJ_TEST")));
+    }
+
+    public void deleteDirWithout(View view) {
+        Utils.deleteFileWithoutDir(new File(Utils.getRootPath("ZJJ_TEST")));
     }
 }

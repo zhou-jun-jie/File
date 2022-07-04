@@ -1,5 +1,7 @@
 package com.zjj.file;
 
+import java.io.File;
+
 /**
  * name：zjj
  * date：2022/7/1
@@ -21,7 +23,7 @@ public interface FileApi {
     void createDateDir();
 
     /**
-     * 根据当前日期创建文件夹
+     * 根据传递的时间来创建文件夹
      * @param time 毫秒值
      */
     void createDateDir(long time);
@@ -36,21 +38,17 @@ public interface FileApi {
     /**
      * 删除文件夹
      *
-     * @param dirs 1-n个文件目录
+     * @param filePath 文件路径
      */
-    void deleteDir(String... dirs);
+    void deleteDir(String filePath);
 
-    /**
-     * 删除所有文件夹
-     */
-    void deleteAllDir();
 
     /**
      * 创建文件
      *
-     * @param fileName 文件名称
+     * @param filePath 文件路径
      */
-    void createFile(String fileName);
+    File createFile(String filePath);
 
     /**
      * 删除文件
@@ -58,11 +56,6 @@ public interface FileApi {
      * @param fileName 文件名称
      */
     void deleteFile(String fileName);
-
-    /**
-     * 删除所有文件
-     */
-    void deleteAllFile();
 
     /**
      * 自动清理
