@@ -3,7 +3,11 @@ package com.zjj.file;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.zjj.file.bean.StorageBean;
+
 import java.io.File;
+import java.nio.file.SecureDirectoryStream;
+import java.util.LinkedHashMap;
 
 /**
  * name：zjj
@@ -16,6 +20,14 @@ public class FileApiImp implements FileApi {
 
     // 根目录路径
     private String rootPath;
+
+
+    @Override
+    public void createRoot() {
+        this.rootPath = MemoryManager.getInstance().getSavePath();
+        boolean isSuccess = Utils.mkDirs(rootPath);
+        Log.e("zjj_memory", "path:" + rootPath + ",isSuccess:" + isSuccess);
+    }
 
     @Override
     public void createRoot(String rootPath) {

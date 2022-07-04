@@ -13,14 +13,10 @@ import com.zjj.file.bean.StorageBean;
 import com.zjj.file.receiver.StorageReceiver;
 
 import java.io.File;
-import java.security.Permissions;
 import java.util.LinkedHashMap;
-import java.util.Map;
-
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Scheduler;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
@@ -58,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
      */
     // 创建根目录,保存在本地
     public void createDir(View view) {
-        /*String root = Utils.getRootPath("ZJJ_TEST");*/
         Disposable subscribe = Observable.create(new ObservableOnSubscribe<Boolean>() {
                     @Override
                     public void subscribe(ObservableEmitter<Boolean> emitter) throws Exception {
@@ -69,17 +64,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void accept(Boolean aBoolean) throws Exception {
                         Log.e("zjj_memory","isSuccess:"+aBoolean);
-                        String rootPath;
-                        if (aBoolean) {
-                            // TODO 测试
-                            LinkedHashMap<String, StorageBean> sdMap = MemoryManager.getInstance().sdMap;
-                            String key = sdMap.keySet().iterator().next();
-                            StorageBean storageBean = sdMap.get(key);
-                            rootPath = storageBean.getPath()+ "/Android/data/" + BuildConfig.APPLICATION_ID + File.separator+"ZJJ_TEST";
-                        } else {
-                            rootPath = Utils.getRootPath("ZJJ_TEST");
-                        }
-                        fileApiImp.createRoot(rootPath);
+                        fileApiImp.createRoot();
                     }
                 });
     }
@@ -103,13 +88,13 @@ public class MainActivity extends AppCompatActivity {
         if (sdMap.size() <=0) {
             return;
         }
-        if (sdMap.size() == 1) {
-            String sd_1 = sdMap.keySet().iterator().next();
-            tvName1.setText(sd_1);
-            StorageBean storageBean = sdMap.get(sd_1);
-            tvTotal1.setText("total:"+MemoryManager.getInstance().getUnit(storageBean.getTotal(),1000));
-            tvUsed1.setText("used:"+MemoryManager.getInstance().getUnit(storageBean.getUsed(),1000));
-        }
+
+        String sd_1 = sdMap.keySet().iterator().next();
+        tvName1.setText(sd_1+",hasSD:"+MemoryManager.getInstance().hasSD() );
+        StorageBean storageBean = sdMap.get(sd_1);
+        tvTotal1.setText("total:"+MemoryManager.getInstance().getUnit(storageBean.getTotal(),1000));
+        tvUsed1.setText("used:"+MemoryManager.getInstance().getUnit(storageBean.getUsed(),1000));
+
 
     }
 

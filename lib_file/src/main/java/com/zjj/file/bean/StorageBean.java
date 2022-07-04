@@ -17,6 +17,10 @@ public class StorageBean {
     private long total;
     // 已使用
     private long used;
+    // 是否是外置SD卡
+    private boolean isSD;
+    // 是否是当前存储卡(互斥唯一的)
+    private boolean isSave;
 
     public int getId() {
         return id;
@@ -56,5 +60,21 @@ public class StorageBean {
 
     public void setFormatId(String formatId) {
         this.formatId = formatId;
+    }
+
+    public boolean isSD() {
+        return isSD;
+    }
+
+    public void setSD(boolean SD) {
+        isSD = SD;
+    }
+
+    public boolean isSave() {
+        return isSave;
+    }
+
+    public void setSave(boolean save) {
+        isSave = save;
     }
 }

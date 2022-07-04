@@ -2,10 +2,11 @@ package com.zjj.file;
 
 import android.annotation.SuppressLint;
 import android.app.Application;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.TextView;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +19,39 @@ import java.util.Date;
  * desc：文件管理所需工具类
  */
 public class Utils {
+
+    /**
+     * 通过反射获取application
+     */
+    public static Application getApplicationByReflect() {
+        try {
+            @SuppressLint("PrivateApi")
+            Class<?> activityThread = Class.forName("android.app.ActivityThread");
+            Object app = activityThread.getMethod("currentApplication").invoke(null, (Object[]) null);
+            if (app == null) {
+                throw new NullPointerException("u should init first");
+            }
+            return (Application) app;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        throw new NullPointerException("u should init first");
+    }
+
+    /**
+     * 获取当前应用版本名
+     */
+    public static String getPackageName() {
+        String packageName = "MaxVision";
+        PackageManager pm = getApplicationByReflect().getPackageManager();
+        try {
+            PackageInfo packageInfo = pm.getPackageInfo(getApplicationByReflect().getPackageName(), 0);
+            packageName = packageInfo.packageName;
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return packageName;
+    }
 
     /**
      * @param rootDir 根目录文件名称
@@ -40,23 +74,6 @@ public class Utils {
                 || !Environment.isExternalStorageRemovable();
     }
 
-    /**
-     * 通过反射获取application
-     */
-    public static Application getApplicationByReflect() {
-        try {
-            @SuppressLint("PrivateApi")
-            Class<?> activityThread = Class.forName("android.app.ActivityThread");
-            Object app = activityThread.getMethod("currentApplication").invoke(null, (Object[]) null);
-            if (app == null) {
-                throw new NullPointerException("u should init first");
-            }
-            return (Application) app;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        throw new NullPointerException("u should init first");
-    }
 
     /**
      * 创建文件夹
@@ -68,9 +85,14 @@ public class Utils {
             Log.e("zjj_file", "path is null,please check[路径为空,请检查路径]");
             return false;
         }
-        File file = new File(path);
-        if (!file.exists()) {
-            return file.mkdir();
+        try {
+            File file = new File(path);
+            if (!file.exists()) {
+                return file.mkdir();
+            }
+        } catch (Exception e) {
+            Log.e("zjj_memory","异常:"+e.getCause());
+            e.printStackTrace();
         }
         return true;
     }
@@ -108,7 +130,7 @@ public class Utils {
 
     /**
      * 递归删除文件夹中的文件，含文件夹
-     * */
+     */
     public static void deleteFileWithDir(File dir) {
         if (null == dir || !dir.exists() || !dir.isDirectory()) return;
         for (File file : dir.listFiles()) {
@@ -119,7 +141,7 @@ public class Utils {
 
     /**
      * 递归删除文件夹中的文件，不含文件夹
-     * */
+     */
     public static void deleteFileWithoutDir(File dir) {
         if (null == dir || !dir.exists() || !dir.isDirectory()) return;
         for (File file : dir.listFiles()) {
@@ -141,6 +163,7 @@ public class Utils {
 
     /**
      * 删除文件
+     *
      * @param path 文件路径
      * @return 是否成功
      */

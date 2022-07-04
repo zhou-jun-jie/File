@@ -10,6 +10,14 @@ import java.io.File;
 public interface FileApi {
 
     /**
+     * 创建根目录(默认以包名为结尾)
+     * 例如:包名 com.maxvision.test
+     * 无SD卡路径为: storage/emulated/0/test
+     * 有SD卡路径为: sd卡路径(可变的)/Android/data/com.maxvision.test
+     */
+    void createRoot();
+
+    /**
      * 创建根目录
      *
      * @param rootPath 根目录路径
@@ -24,6 +32,7 @@ public interface FileApi {
 
     /**
      * 根据传递的时间来创建文件夹
+     *
      * @param time 毫秒值
      */
     void createDateDir(long time);

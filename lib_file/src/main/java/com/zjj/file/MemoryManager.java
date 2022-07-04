@@ -1,6 +1,5 @@
 package com.zjj.file;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.storage.StorageManager;
 import android.util.Log;
@@ -60,8 +59,7 @@ public class MemoryManager {
                     Object obj = getVolumeInfo.get(i);
                     Field getType = obj.getClass().getField("type");
                     int type = getType.getInt(obj);
-                    if (type == 0) {//TYPE_PUBLIC
-                        //外置存储
+                    if (type == 0 || type == 2) {
                         Method isMountedReadable = obj.getClass().getDeclaredMethod("isMountedReadable");
                         boolean readable = (boolean) isMountedReadable.invoke(obj);
                         if (readable) {
@@ -74,6 +72,8 @@ public class MemoryManager {
                             long total = f.getTotalSpace();
                             long used = total - f.getFreeSpace();
                             storageBean.setId(i + 1);
+                            // type == 0代表为SD卡, 2 代表 /storage/emulated
+                            storageBean.setSD(type == 0);
                             storageBean.setTotal(total);
                             storageBean.setUsed(used);
                             storageBean.setFormatId(formatId);
@@ -183,5 +183,86 @@ public class MemoryManager {
             e.printStackTrace();
         }
     }
+
+    /**
+     * 获取是否有SD卡
+     *
+     * @return true代表有, false代表没有
+     */
+    public boolean hasSD() {
+        for (String key : sdMap.keySet()) {
+            StorageBean storageBean = sdMap.get(key);
+            if (null != storageBean) {
+                Log.e("zjj_memory", "path:" + storageBean.getPath());
+                return storageBean.isSD();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取存储位置
+     *
+     * @return 文件存储路径
+     */
+    public String getSavePath(String rootName) {
+        if (sdMap.size() == 1) {
+            String key = sdMap.keySet().iterator().next();
+            StorageBean storageBean = sdMap.get(key);
+            if (null != storageBean) {
+                return storageBean.getPath() + File.separator + "0" + File.separator + rootName;
+            }
+        }
+        for (String key : sdMap.keySet()) {
+            StorageBean storageBean = sdMap.get(key);
+            if (null != storageBean) {
+                boolean hasSD = storageBean.isSD();
+                if (hasSD) {
+                    return storageBean.getPath() + File.separator + rootName;
+                }
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 获取默认根目录位置
+     */
+    public String getSavePath() {
+        if (sdMap.size() == 1) {
+            String key = sdMap.keySet().iterator().next();
+            StorageBean storageBean = sdMap.get(key);
+            if (null != storageBean) {
+                String packageName = Utils.getPackageName().substring(Utils.getPackageName().lastIndexOf(".") + 1);
+                return storageBean.getPath() + File.separator + "0" + File.separator + packageName;
+            }
+        }
+        for (String key : sdMap.keySet()) {
+            StorageBean storageBean = sdMap.get(key);
+            if (null != storageBean) {
+                boolean hasSD = storageBean.isSD();
+                if (hasSD) {
+                    return storageBean.getPath() + "/Android/data/" + Utils.getPackageName();
+                }
+            }
+        }
+        return "";
+    }
+
+    /**
+     * 获取内置内存大小
+     */
+    public StorageBean getInnerSize() {
+        for (String key : sdMap.keySet()) {
+            StorageBean storageBean = sdMap.get(key);
+            if (null != storageBean && !storageBean.isSD()) {
+                return storageBean;
+            }
+        }
+        return null;
+    }
+
+
+
 
 }
