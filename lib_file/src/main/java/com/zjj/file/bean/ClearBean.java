@@ -18,8 +18,10 @@ public class ClearBean {
      */
     private int strategy = SIZE_STRATEGY;
 
-    private long time;  // 时间
+    public String time;  // 时间
 
-    private long size;  // 大小
+    public long size;  // 大小
+
+
 
 }

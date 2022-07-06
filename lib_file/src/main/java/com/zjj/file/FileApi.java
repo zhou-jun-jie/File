@@ -15,14 +15,14 @@ public interface FileApi {
      * 无SD卡路径为: storage/emulated/0/test
      * 有SD卡路径为: sd卡路径(可变的)/Android/data/com.maxvision.test
      */
-    void createRoot();
+    void createSavePath();
 
     /**
      * 创建根目录
      *
      * @param rootPath 根目录路径
      */
-    void createRoot(String rootPath);
+    void createSavePath(String rootPath);
 
     /**
      * 根据当前日期创建文件夹

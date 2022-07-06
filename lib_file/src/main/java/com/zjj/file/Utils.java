@@ -7,11 +7,13 @@ import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
-
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 /**
  * name：zjj
@@ -91,7 +93,7 @@ public class Utils {
                 return file.mkdir();
             }
         } catch (Exception e) {
-            Log.e("zjj_memory","异常:"+e.getCause());
+            Log.e("zjj_memory", "异常:" + e.getCause());
             e.printStackTrace();
         }
         return true;
@@ -137,6 +139,7 @@ public class Utils {
             if (file.isFile()) file.delete(); // 删除所有文件
             else if (file.isDirectory()) deleteDirWithFile(file); //文件夹继续递归
         }
+        dir.delete();
     }
 
     /**
@@ -182,10 +185,6 @@ public class Utils {
         return calendar;
     }
 
-    public static int getYear() {
-        return getCalendar(System.currentTimeMillis()).get(Calendar.YEAR);
-    }
-
     /**
      * @param time 毫秒值
      * @return 获取当前年份
@@ -194,28 +193,123 @@ public class Utils {
         return getCalendar(time).get(Calendar.YEAR);
     }
 
+    public static int getYear() {
+        return getCalendar(System.currentTimeMillis()).get(Calendar.YEAR);
+    }
+
     /**
      * @param time 毫秒值
      * @return 获取当前月份
      */
-    public static int getMonth(long time) {
-        return getCalendar(time).get(Calendar.MONTH) + 1;
+    public static String getMonth(long time) {
+        int month = getCalendar(time).get(Calendar.MONTH) + 1;
+        if (month < 10) {
+            return "0"+month;
+        }
+        return String.valueOf(month);
     }
 
-    public static int getMonth() {
-        return getCalendar(System.currentTimeMillis()).get(Calendar.MONTH) + 1;
+    public static String getMonth() {
+        int month = getCalendar(System.currentTimeMillis()).get(Calendar.MONTH) + 1;
+        if (month < 10) {
+            return "0"+month;
+        }
+        return String.valueOf(month);
     }
 
     /**
      * @param time 毫秒值
      * @return 获取当前日
      */
-    public static int getDay(long time) {
-        return getCalendar(time).get(Calendar.DAY_OF_MONTH);
+    public static String getDay(long time) {
+        int day = getCalendar(time).get(Calendar.DAY_OF_MONTH) ;
+        if (day < 10) {
+            return "0"+day;
+        }
+        return String.valueOf(day);
     }
 
-    public static int getDay() {
-        return getCalendar(System.currentTimeMillis()).get(Calendar.DAY_OF_MONTH);
+    public static String getDay() {
+        int day = getCalendar(System.currentTimeMillis()).get(Calendar.DAY_OF_MONTH) ;
+        if (day < 10) {
+            return "0"+day;
+        }
+        return String.valueOf(day);
+    }
+
+
+    /**
+     * 获取文件夹下文件的数量
+     *
+     * @param folderPath 文件夹路径
+     */
+    public static int getFolderSize(String folderPath) {
+        if (TextUtils.isEmpty(folderPath)) {
+            return 0;
+        }
+        File file = new File(folderPath);
+        if (!file.exists()) {
+            return 0;
+        }
+        File[] files = file.listFiles();
+        if (files == null || files.length == 0) {
+            return 0;
+        }
+        return files.length;
+    }
+
+    /**
+     * 判断字符串是否是数字
+     *
+     * @param str 字符串
+     * @return true是, false不是
+     */
+    public static boolean isNumeric(String str) {
+        if (TextUtils.isEmpty(str)) {
+            return false;
+        }
+        for (int i = str.length(); --i >= 0; ) {
+            int chr = str.charAt(i);
+            if (chr < 48 || chr > 57)
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * @param path   文件路径
+     * @param length 文件路径最后一个字母
+     * @return 获取文件夹编号
+     */
+    public static int getNum(String path, int length) {
+        String s = path.substring(length);
+        if (isNumeric(s)) {
+            return getNum(path, length - 1);
+        }
+        String last = path.substring(length + 1);
+        if (isNumeric(last)) {
+            return Integer.parseInt(last);
+        }
+        return 0;
+    }
+
+
+    public static List<String> getSubFolderAndFileNames(String folderPath) {
+        List<String> fileNames = new ArrayList<>();
+        File file = new File(folderPath);
+        if (!file.exists()) {
+            file.mkdirs();
+        }
+        File[] files = file.listFiles();
+        if (files != null && files.length != 0) {
+            fileNames = new ArrayList<>();
+            for (File value : files) {
+                if (value.exists()) {
+                    fileNames.add(value.getAbsolutePath());
+                }
+            }
+        }
+        return fileNames;
     }
 
 
