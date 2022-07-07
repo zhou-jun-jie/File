@@ -26,7 +26,7 @@ import java.util.Set;
  */
 public class MemoryManager {
 
-    private static final String TAG = "MemoryManager";
+    private static final String TAG = "ZJJ_MEMORY";
 
     public final LinkedHashMap<String, StorageBean> sdMap;
 
@@ -86,7 +86,7 @@ public class MemoryManager {
                                 String packageName = Utils.getPackageName().substring(Utils.getPackageName().lastIndexOf(".") + 1);
                                 storageBean.setRootPath(sdPath + "/0/"+ packageName);
                             }
-                            Log.e("zjj_memory", "sdPath:" + sdPath + ",format:" + formatId);
+                            Log.e(TAG, "sdPath:" + sdPath + ",format:" + formatId);
                             sdMap.put(formatId, storageBean);
                         }
                     }
@@ -182,11 +182,11 @@ public class MemoryManager {
                 Method mount = StorageManager.class.getDeclaredMethod("mount", new Class[]{String.class});
                 format.invoke(storageManager, storageBean.getFormatId());
                 mount.invoke(storageManager, storageBean.getFormatId());
-                Log.e("zjj_memory", "格式化卡的id是:" + storageBean.getFormatId());
+                Log.e(TAG, "格式化卡的id是:" + storageBean.getFormatId());
             }
         } catch (Exception e) {
             if (e.getCause() instanceof SecurityException) {
-                Log.e("zjj_memory", "android manifest has no permission:[清单文件缺少权限:]" + e.getCause().getMessage());
+                Log.e(TAG, "android manifest has no permission:[清单文件缺少权限:]" + e.getCause().getMessage());
             }
             e.printStackTrace();
         }
@@ -201,7 +201,7 @@ public class MemoryManager {
         for (String key : sdMap.keySet()) {
             StorageBean storageBean = sdMap.get(key);
             if (null != storageBean) {
-                Log.e("zjj_memory", "path:" + storageBean.getRootPath());
+                Log.e(TAG, "path:" + storageBean.getRootPath());
                 return storageBean.isSD();
             }
         }

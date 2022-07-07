@@ -1,25 +1,22 @@
 package com.zjj.file;
 
 import android.annotation.SuppressLint;
-import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
 
 import com.zjj.file.bean.StorageBean;
 
 import java.io.File;
-import java.nio.file.SecureDirectoryStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
-import io.reactivex.functions.BooleanSupplier;
 import io.reactivex.functions.Function;
-import io.reactivex.functions.Predicate;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -31,35 +28,34 @@ public class FileApiImp implements FileApi {
 
     private static final String TAG = "ZJJ_FILE";
 
+    /**
+     * 文件存储的根路径
+     */
     private String savePath;
-    private boolean showLog;
+    /**
+     * 是否显示日志
+     */
+    private final boolean showLog;
     private String saveName;
-    private String[] dirNames;
-    private float cleanPercent;
-    private float retainPercent;
-    private int fileSize;
+    private final float cleanPercent;
+    private final float retainPercent;
+    private final int fileSize;
+    private final long clearTime;
+    private final TimeUnit clearTimeUnit;
 
     // 文件名+地址的Map
     private final HashMap<String, String> fileMap;
 
-    public FileApiImp(boolean showLog, String saveName, String[] dirNames, float cleanPercent,
-                      float retainPercent, int fileSize) {
+    public FileApiImp(boolean showLog, String saveName, float cleanPercent,
+                      float retainPercent, int fileSize, long clearTime, TimeUnit clearTimeUnit) {
         this.showLog = showLog;
         this.saveName = saveName;
-        this.dirNames = dirNames;
         this.cleanPercent = cleanPercent;
         this.retainPercent = retainPercent;
         this.fileSize = fileSize;
+        this.clearTime = clearTime;
+        this.clearTimeUnit = clearTimeUnit;
         fileMap = new HashMap<>();
-    }
-
-    @Override
-    public void createSavePath() {
-        this.savePath = MemoryManager.getInstance().getSavePath("");
-        boolean isSuccess = Utils.mkDirs(savePath);
-        if (showLog) {
-            Log.e(TAG, "创建文件保存目录:" + savePath + ",isSuccess:" + isSuccess);
-        }
     }
 
     @Override
@@ -69,22 +65,6 @@ public class FileApiImp implements FileApi {
         if (showLog) {
             Log.e(TAG, "创建文件保存目录:" + savePath + ",isSuccess:" + isSuccess);
         }
-    }
-
-    @Override
-    public void createDateDir() {
-        int year = Utils.getYear();
-        String month = Utils.getMonth();
-        String day = Utils.getDay();
-        createDateDirs(year, month, day);
-    }
-
-    @Override
-    public void createDateDir(long time) {
-        int year = Utils.getYear(time);
-        String month = Utils.getMonth(time);
-        String day = Utils.getDay(time);
-        createDateDirs(year, month, day);
     }
 
     @Override
@@ -110,19 +90,25 @@ public class FileApiImp implements FileApi {
     }
 
     @Override
-    public String getDirPath(String dirName) {
-        return fileMap.get(dirName);
+    public String getDirPath(String dirName, long time) {
+        return createDateDirs(dirName, time);
+    }
+
+    @Override
+    public String getRootPath() {
+        return savePath;
     }
 
     @SuppressLint("CheckResult")
     @Override
     public Observable<List<String>> autoClear() {
-        return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
-                    emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect()));
-                    emitter.onComplete();
-                })
+
+        return Observable.interval(1, clearTime, clearTimeUnit)
                 .subscribeOn(Schedulers.io())
-                .filter(aBoolean -> filter0rRepeat())
+                .flatMap((Function<Long, ObservableSource<Boolean>>)
+                        aLong -> Observable.create((ObservableOnSubscribe<Boolean>)
+                                emitter -> emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect()))))
+                .filter(aBoolean -> filter0rRepeat(true))
                 .flatMap((Function<Boolean, ObservableSource<StorageBean>>) aBoolean -> {
                     boolean hasSD = MemoryManager.getInstance().hasSD();
                     return Observable.fromIterable(MemoryManager.getInstance().getStorage(hasSD));
@@ -134,7 +120,7 @@ public class FileApiImp implements FileApi {
                     Utils.deleteFileWithDir(new File(s));
                     return true;
                 })
-                .repeatUntil(() -> !filter0rRepeat())
+                .repeatUntil(() -> !filter0rRepeat(false))
                 .toList().toObservable();
     }
 
@@ -155,7 +141,7 @@ public class FileApiImp implements FileApi {
         return Observable.just("empty");
     }
 
-    private boolean filter0rRepeat() {
+    private boolean filter0rRepeat(boolean isFilter) {
         boolean hasSD = MemoryManager.getInstance().hasSD();
         List<StorageBean> storageList;
         long total = 0;
@@ -175,8 +161,10 @@ public class FileApiImp implements FileApi {
                 used += storageBean.getUsed();
             }
         }
-        boolean isFilterOrRepeat = used * 1.0f / total >= 0.01;
-        Log.e("zjj_file", "是否超过 until:" + isFilterOrRepeat);
+        boolean isFilterOrRepeat = used * 1.0f / total >= (isFilter ? cleanPercent : retainPercent);
+        if (showLog) {
+            Log.e(TAG, "是否超过:" + isFilterOrRepeat);
+        }
         return isFilterOrRepeat;
     }
 
@@ -188,7 +176,7 @@ public class FileApiImp implements FileApi {
      * @param month 月
      * @param day   日
      */
-    private void createDateDirs(int year, String month, String day) {
+    /*private String createDateDirs(int year, String month, String day) {
         // 创建年/月/日文件夹
         String yearPath = savePath + File.separator + year + "年";
         String monthPath = yearPath + File.separator + month + "月";
@@ -225,7 +213,56 @@ public class FileApiImp implements FileApi {
                 }
             }
         }
+    }*/
+
+
+    /**
+     * @param time    毫秒值
+     * @param dirName 文件夹名称
+     * @return 创建文件夹
+     */
+    private String createDateDirs(String dirName, long time) {
+        if (TextUtils.isEmpty(dirName)) {
+            if (showLog) {
+                Log.e(TAG, "文件夹名称为空,请检查文件夹名称");
+            }
+            throw new IllegalArgumentException("文件夹名称为空,请检查文件夹名称");
+        }
+        int year = Utils.getYear(time);
+        String month = Utils.getMonth(time);
+        String day = Utils.getDay(time);
+        // 创建年/月/日文件夹
+        String yearPath = savePath + File.separator + year + "年";
+        String monthPath = yearPath + File.separator + month + "月";
+        String dayPath = monthPath + File.separator + day + "日";
+        Utils.mkDirs(yearPath);
+        Utils.mkDirs(monthPath);
+        Utils.mkDirs(dayPath);
+        // 创建 dirName
+        String path = fileMap.get(dirName);
+        if (TextUtils.isEmpty(path)) {
+            // 为空,直接创建文件夹
+            String dirPath = dayPath + File.separator + dirName;
+            boolean isSuccess = Utils.mkDirs(dirPath);
+            fileMap.put(dirName, dirPath);
+            if (showLog) {
+                Log.e(TAG, "创建存放路径:" + dirPath + ",是否成功:" + isSuccess);
+            }
+        } else {
+            // 不为空
+            // 获取文件数量
+            int folderSize = Utils.getFolderSize(path);
+            if (folderSize >= fileSize) {
+                // 获取文件夹的编号
+                int num = Utils.getNum(path, path.length() - 1);
+                String dirPath = dayPath + File.separator + dirName + num;
+                boolean isSuccess = Utils.mkDirs(dirPath);
+                fileMap.put(dirName, dirPath);
+                if (showLog) {
+                    Log.e(TAG, "创建存放路径:" + dirPath + ",是否成功:" + isSuccess);
+                }
+            }
+        }
+        return fileMap.get(dirName);
     }
-
-
 }

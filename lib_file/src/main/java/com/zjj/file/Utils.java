@@ -290,7 +290,7 @@ public class Utils {
         if (isNumeric(last)) {
             return Integer.parseInt(last);
         }
-        return 0;
+        return 1;
     }
 
 

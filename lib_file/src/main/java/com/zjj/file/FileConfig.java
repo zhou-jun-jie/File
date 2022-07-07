@@ -3,6 +3,7 @@ package com.zjj.file;
 import android.util.Log;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 /**
  * name：zjj
@@ -28,7 +29,6 @@ public class FileConfig {
 
     /**
      * 安全的百分比,默认为0.5f
-     * TODO 注意: 此参数不能小于cleanPercent
      */
     private float retainPercent = 0.5f;
 
@@ -38,13 +38,19 @@ public class FileConfig {
     private int fileNum = 500;
 
     /**
-     * 需要创建的文件夹名称--数组
+     * 自动清理的轮询时间
      */
-    private String[] dirNames;
+    private long clearTime;
+
+    /**
+     * 自动清理的轮询时间单位
+     */
+    private TimeUnit clearTimeUnit;
+
 
     static class Builder {
 
-        private FileConfig fileConfig;
+        private final FileConfig fileConfig;
 
         public Builder() {
             fileConfig = new FileConfig();
@@ -75,20 +81,17 @@ public class FileConfig {
             return this;
         }
 
-        public Builder setDirs(String[] dirNames) {
-            fileConfig.dirNames = dirNames;
+        public Builder setClearTime(long clearTime, TimeUnit timeUnit) {
+            fileConfig.clearTime = clearTime;
+            fileConfig.clearTimeUnit = timeUnit;
             return this;
         }
 
         public FileConfig build() {
             if (fileConfig.cleanPercent <= fileConfig.retainPercent) {
-                Log.e("zjj_file","需要清理的百分比不能超过保留的百分比");
+                Log.e("zjj_file", "需要清理的百分比不能超过保留的百分比");
                 throw new IllegalArgumentException("需要清理的百分比不能超过保留的百分比");
             }
-            /*if (fileConfig.dirNames.length <= 0) {
-                Log.e("zjj_file","需要清理的百分比不能超过保留的百分比");
-                throw new IllegalArgumentException("需要清理的百分比不能超过保留的百分比");
-            }*/
             return fileConfig;
         }
     }
@@ -133,22 +136,32 @@ public class FileConfig {
         this.fileNum = fileNum;
     }
 
-    public String[] getDirNames() {
-        return dirNames;
+    public long getClearTime() {
+        return clearTime;
     }
 
-    public void setDirNames(String[] dirNames) {
-        this.dirNames = dirNames;
+    public void setClearTime(long clearTime) {
+        this.clearTime = clearTime;
+    }
+
+    public TimeUnit getClearTimeUnit() {
+        return clearTimeUnit;
+    }
+
+    public void setClearTimeUnit(TimeUnit clearTimeUnit) {
+        this.clearTimeUnit = clearTimeUnit;
     }
 
     @Override
     public String toString() {
         return "FileConfig{" +
-                "saveName='" + saveName + '\'' +
+                "showLog=" + showLog +
+                ", saveName='" + saveName + '\'' +
                 ", cleanPercent=" + cleanPercent +
                 ", retainPercent=" + retainPercent +
                 ", fileNum=" + fileNum +
-                ", dirNames=" + Arrays.toString(dirNames) +
+                ", clearTime=" + clearTime +
+                ", clearTimeUnit=" + clearTimeUnit +
                 '}';
     }
 }

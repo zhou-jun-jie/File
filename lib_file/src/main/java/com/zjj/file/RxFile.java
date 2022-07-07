@@ -26,29 +26,15 @@ public class RxFile implements FileApi {
     }
 
     public void setConfig(FileConfig config) {
-        fileApiImp = new FileApiImp(config.isShowLog(), config.getSaveName(), config.getDirNames(), config.getCleanPercent(),
-                config.getRetainPercent(), config.getFileNum());
-    }
-
-
-    @Override
-    public void createSavePath() {
-        fileApiImp.createSavePath();
+        fileApiImp = new FileApiImp(config.isShowLog(), config.getSaveName(), config.getCleanPercent(),
+                config.getRetainPercent(), config.getFileNum(),config.getClearTime(),config.getClearTimeUnit());
+        // 初始化目录
+        createSavePath(config.getSaveName());
     }
 
     @Override
     public void createSavePath(String rootPath) {
         fileApiImp.createSavePath(rootPath);
-    }
-
-    @Override
-    public void createDateDir() {
-        fileApiImp.createDateDir();
-    }
-
-    @Override
-    public void createDateDir(long time) {
-        fileApiImp.createDateDir(time);
     }
 
     @Override
@@ -72,8 +58,13 @@ public class RxFile implements FileApi {
     }
 
     @Override
-    public String getDirPath(String dirName) {
-        return fileApiImp.getDirPath(dirName);
+    public String getDirPath(String dirName, long time) {
+        return fileApiImp.getDirPath(dirName,time);
+    }
+
+    @Override
+    public String getRootPath() {
+        return fileApiImp.getRootPath();
     }
 
     @Override
