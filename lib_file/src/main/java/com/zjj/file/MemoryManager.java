@@ -2,6 +2,7 @@ package com.zjj.file;
 
 import android.content.Context;
 import android.os.storage.StorageManager;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.zjj.file.bean.StorageBean;
@@ -79,6 +80,12 @@ public class MemoryManager {
                             storageBean.setUsed(used);
                             storageBean.setFormatId(formatId);
                             storageBean.setPath(sdPath);
+                            if (type == 0) {
+                                storageBean.setRootPath(sdPath + "/Android/data/" + Utils.getPackageName());
+                            } else {
+                                String packageName = Utils.getPackageName().substring(Utils.getPackageName().lastIndexOf(".") + 1);
+                                storageBean.setRootPath(sdPath + "/0/"+ packageName);
+                            }
                             Log.e("zjj_memory", "sdPath:" + sdPath + ",format:" + formatId);
                             sdMap.put(formatId, storageBean);
                         }
@@ -194,7 +201,7 @@ public class MemoryManager {
         for (String key : sdMap.keySet()) {
             StorageBean storageBean = sdMap.get(key);
             if (null != storageBean) {
-                Log.e("zjj_memory", "path:" + storageBean.getPath());
+                Log.e("zjj_memory", "path:" + storageBean.getRootPath());
                 return storageBean.isSD();
             }
         }
@@ -203,6 +210,8 @@ public class MemoryManager {
 
     /**
      * 获取存储位置
+     *
+     * @param formatId sd卡ID
      */
     public String getSavePath(String formatId) {
         if (sdMap.size() <= 0) {
@@ -212,8 +221,7 @@ public class MemoryManager {
         StorageBean storageBean = sdMap.get(first);
         if (sdMap.size() == 1) {
             if (null != storageBean) {
-                String packageName = Utils.getPackageName().substring(Utils.getPackageName().lastIndexOf(".") + 1);
-                return storageBean.getPath() + File.separator + "0" + File.separator + packageName;
+                return storageBean.getRootPath();
             }
         } else {
             for (String key : sdMap.keySet()) {
@@ -222,14 +230,26 @@ public class MemoryManager {
                     boolean hasSD = sb.isSD();
                     if (hasSD && sb.getFormatId().equals(formatId)) {
                         // 之前存在的sd卡
-                        return sb.getPath() + "/Android/data/" + Utils.getPackageName();
+                        return sb.getRootPath();
                     }
                 }
             }
-            // 默认存在第一张
+            // 默认存储在第一张
             if (null != storageBean) {
-                return storageBean.getPath() + "/Android/data/" + Utils.getPackageName();
+                return storageBean.getRootPath();
             }
+        }
+        return "";
+    }
+
+    /**
+     * 获取文件夹具体路径
+     *
+     * @param dirName 文件夹名称
+     */
+    public String getSavePath(String formatId, String dirName) {
+        if (!TextUtils.isEmpty(dirName)) {
+            return getSavePath(formatId);
         }
         return "";
     }
@@ -256,6 +276,20 @@ public class MemoryManager {
         for (String key : sdMap.keySet()) {
             StorageBean storageBean = sdMap.get(key);
             if (null != storageBean && storageBean.isSD()) {
+                list.add(storageBean);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * 获取sd卡内存大小
+     */
+    public List<StorageBean> getStorage(boolean hasSD) {
+        List<StorageBean> list = new ArrayList<>();
+        for (String key : sdMap.keySet()) {
+            StorageBean storageBean = sdMap.get(key);
+            if (null != storageBean && (hasSD == storageBean.isSD())) {
                 list.add(storageBean);
             }
         }

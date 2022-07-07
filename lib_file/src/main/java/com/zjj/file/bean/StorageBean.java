@@ -21,6 +21,8 @@ public class StorageBean {
     private boolean isSD;
     // 是否是当前存储卡(互斥唯一的)
     private boolean isSave;
+    // 根目录路径
+    private String rootPath;
 
     public int getId() {
         return id;
@@ -76,5 +78,27 @@ public class StorageBean {
 
     public void setSave(boolean save) {
         isSave = save;
+    }
+
+    public String getRootPath() {
+        return rootPath;
+    }
+
+    public void setRootPath(String rootPath) {
+        this.rootPath = rootPath;
+    }
+
+    @Override
+    public String toString() {
+        return "StorageBean{" +
+                "id=" + id +
+                ", path='" + path + '\'' +
+                ", formatId='" + formatId + '\'' +
+                ", total=" + total +
+                ", used=" + used +
+                ", isSD=" + isSD +
+                ", isSave=" + isSave +
+                ", rootPath='" + rootPath + '\'' +
+                '}';
     }
 }

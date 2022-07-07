@@ -12,6 +12,11 @@ import java.util.Arrays;
 public class FileConfig {
 
     /**
+     * 是否显示日志
+     */
+    private boolean showLog;
+
+    /**
      * 存储根路径名称,默认为包名
      */
     private String saveName = Utils.getPackageName();
@@ -43,6 +48,11 @@ public class FileConfig {
 
         public Builder() {
             fileConfig = new FileConfig();
+        }
+
+        public Builder showLog(boolean showLog) {
+            fileConfig.showLog = showLog;
+            return this;
         }
 
         public Builder setSaveName(String saveName) {
@@ -81,8 +91,54 @@ public class FileConfig {
             }*/
             return fileConfig;
         }
+    }
 
+    public boolean isShowLog() {
+        return showLog;
+    }
 
+    public void setShowLog(boolean showLog) {
+        this.showLog = showLog;
+    }
+
+    public String getSaveName() {
+        return saveName;
+    }
+
+    public void setSaveName(String saveName) {
+        this.saveName = saveName;
+    }
+
+    public float getCleanPercent() {
+        return cleanPercent;
+    }
+
+    public void setCleanPercent(float cleanPercent) {
+        this.cleanPercent = cleanPercent;
+    }
+
+    public float getRetainPercent() {
+        return retainPercent;
+    }
+
+    public void setRetainPercent(float retainPercent) {
+        this.retainPercent = retainPercent;
+    }
+
+    public int getFileNum() {
+        return fileNum;
+    }
+
+    public void setFileNum(int fileNum) {
+        this.fileNum = fileNum;
+    }
+
+    public String[] getDirNames() {
+        return dirNames;
+    }
+
+    public void setDirNames(String[] dirNames) {
+        this.dirNames = dirNames;
     }
 
     @Override

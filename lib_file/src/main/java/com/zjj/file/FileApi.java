@@ -1,6 +1,9 @@
 package com.zjj.file;
 
 import java.io.File;
+import java.util.List;
+
+import io.reactivex.Observable;
 
 /**
  * name：zjj
@@ -10,7 +13,7 @@ import java.io.File;
 public interface FileApi {
 
     /**
-     * 创建根目录(默认以包名为结尾)
+     * 创建文件存储路径(默认以包名为结尾)
      * 例如:包名 com.maxvision.test
      * 无SD卡路径为: storage/emulated/0/test
      * 有SD卡路径为: sd卡路径(可变的)/Android/data/com.maxvision.test
@@ -18,11 +21,11 @@ public interface FileApi {
     void createSavePath();
 
     /**
-     * 创建根目录
+     * 创建文件存储路径
      *
-     * @param rootPath 根目录路径
+     * @param rootName 文件夹路径
      */
-    void createSavePath(String rootPath);
+    void createSavePath(String rootName);
 
     /**
      * 根据当前日期创建文件夹
@@ -67,8 +70,14 @@ public interface FileApi {
     void deleteFile(String fileName);
 
     /**
+     * 获取文件夹路径
+     * @param dirName 文件夹名称
+     */
+    String getDirPath(String dirName);
+
+    /**
      * 自动清理
      */
-    void autoClear();
+    Observable<List<String>> autoClear();
 
 }

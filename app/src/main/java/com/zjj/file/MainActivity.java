@@ -14,19 +14,23 @@ import com.yanzhenjie.permission.runtime.Permission;
 import com.zjj.file.bean.StorageBean;
 import com.zjj.file.receiver.StorageReceiver;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import io.reactivex.MaybeSource;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
+import io.reactivex.Observer;
+import io.reactivex.SingleObserver;
+import io.reactivex.SingleSource;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.BooleanSupplier;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.functions.Predicate;
@@ -68,7 +72,6 @@ public class MainActivity extends AppCompatActivity {
         setData();
     }
 
-    FileApiImp fileApiImp = new FileApiImp();
 
     /**
      * 测试,创建文件夹几乎不耗时
@@ -85,7 +88,10 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void accept(Boolean aBoolean) throws Exception {
                         Log.e("zjj_memory", "isSuccess:" + aBoolean);
-                        fileApiImp.createSavePath();
+                        LinkedHashMap<String, StorageBean> sdMap = MemoryManager.getInstance().sdMap;
+                        for (String key : sdMap.keySet()) {
+                            Log.e("zjj_file", sdMap.get(key).toString());
+                        }
                     }
                 });
     }
@@ -115,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
         FileConfig fileConfig = new FileConfig.Builder()
                 .setFileNum(11)
                 .build();
-        Log.e("zjj_config",fileConfig.toString());
+        Log.e("zjj_config", fileConfig.toString());
 
     }
 
@@ -140,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void createDir(View view) {
-        fileApiImp.createDateDir();
+
     }
 
     String rootPath = "/storage/emulated/0/ZJJ_TEST";
@@ -173,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
 
                         // 获取大小
                         String fileSize = FileSizeUtil.getAutoFileOrFilesSize(rootPath);
-                        Log.e("zjj_file","filter:"+fileSize.compareTo("300MB")+",file:"+s);
+                        Log.e("zjj_file", "filter:" + fileSize.compareTo("300MB") + ",file:" + s);
                         return fileSize.compareTo("300MB") > 0;
                     }
                 }).subscribe(new Consumer<String>() {
@@ -181,17 +187,285 @@ public class MainActivity extends AppCompatActivity {
                     public void accept(String s) throws Exception {
                         // 删除文件
                         Utils.deleteFileWithDir(new File(s));
-                        Log.e("zjj_file","consumer:"+s);
+                        Log.e("zjj_file", "consumer:" + s);
                     }
                 });
     }
 
 
     public void createDirWithNum(View view) {
-        fileApiImp.createMultiDirs(Utils.getYear(),Utils.getMonth(),Utils.getDay());
+
     }
 
-    public void deleteDir(View view) {
-        Utils.deleteFile("/storage/emulated/0/ZJJ_TEST/2020年/12月/15日");
+    @SuppressLint("CheckResult")
+    public void test(View view) {
+        /*clear().subscribe(new Consumer<Boolean>() {
+            @Override
+            public void accept(Boolean aBoolean) throws Exception {
+                Log.e("zjj_file", "delete is Success:" + aBoolean);
+            }
+        });*/
+
+        delete().subscribe(new Consumer<List<String>>() {
+            @Override
+            public void accept(List<String> strings) throws Exception {
+                for (String path: strings) {
+                    Log.e("zjj_file","删除成功:"+path);
+                }
+            }
+        });
     }
+
+    public Observable<Boolean> clear() {
+        return Observable.create(new ObservableOnSubscribe<Boolean>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Boolean> emitter) throws Exception {
+                        emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect()));
+                        emitter.onComplete();
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .repeatUntil(new BooleanSupplier() {
+                    @Override
+                    public boolean getAsBoolean() throws Exception {
+                        boolean hasSD = MemoryManager.getInstance().hasSD();
+                        List<StorageBean> storageList;
+                        long total = 0;
+                        long used = 0;
+                        if (hasSD) {
+                            // 判断SD卡
+                            storageList = MemoryManager.getInstance().getStorage(true);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        } else {
+                            // 判断内部
+                            storageList = MemoryManager.getInstance().getStorage(false);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        }
+                        boolean b = used * 1.0f / total >= 0.01;
+                        Log.e("zjj_file", "是否超过 until:" + b);
+                        return !b;
+                    }
+                })
+                .filter(new Predicate<Boolean>() {
+                    @Override
+                    public boolean test(Boolean aBoolean) throws Exception {
+                        boolean hasSD = MemoryManager.getInstance().hasSD();
+                        List<StorageBean> storageList;
+                        long total = 0;
+                        long used = 0;
+                        if (hasSD) {
+                            // 判断SD卡
+                            storageList = MemoryManager.getInstance().getStorage(true);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        } else {
+                            // 判断内部
+                            storageList = MemoryManager.getInstance().getStorage(false);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        }
+                        boolean b = used * 1.0f / total >= 0.01;
+                        Log.e("zjj_file", "是否超过filter:" + b);
+                        return b;
+                    }
+                })
+                .flatMap(new Function<Boolean, ObservableSource<StorageBean>>() {
+                    @Override
+                    public ObservableSource<StorageBean> apply(Boolean aBoolean) throws Exception {
+                        boolean hasSD = MemoryManager.getInstance().hasSD();
+                        return Observable.fromIterable(MemoryManager.getInstance().getStorage(hasSD));
+                    }
+                }).flatMap(new Function<StorageBean, ObservableSource<String>>() {
+                    @Override
+                    public ObservableSource<String> apply(StorageBean storageBean) throws Exception {
+                        List<String> rootPath = Utils.getSubFolderAndFileNames(storageBean.getRootPath());
+                        return Observable.fromIterable(rootPath);
+                    }
+                }).flatMap(new Function<String, ObservableSource<String>>() {
+                    @Override
+                    public ObservableSource<String> apply(String s) throws Exception {
+                        List<String> months = Utils.getSubFolderAndFileNames(s);
+                        return Observable.fromIterable(months);
+                    }
+                }).flatMap(new Function<String, ObservableSource<String>>() {
+                    @Override
+                    public ObservableSource<String> apply(String s) throws Exception {
+                        List<String> days = Utils.getSubFolderAndFileNames(s);
+                        Log.e("zjj_file", "删之前");
+                        return Observable.fromIterable(days);
+                    }
+                })
+                .flatMap(new Function<String, ObservableSource<Boolean>>() {
+                    @Override
+                    public ObservableSource<Boolean> apply(String s) throws Exception {
+                        Utils.deleteFileWithDir(new File(s));
+                        Log.e("zjj_file", "delete_path:" + s);
+                        return Observable.create(new ObservableOnSubscribe<Boolean>() {
+                            @Override
+                            public void subscribe(ObservableEmitter<Boolean> emitter) throws Exception {
+                                emitter.onNext(true);
+                            }
+                        });
+                    }
+                });
+
+
+    }
+
+
+    @SuppressLint("CheckResult")
+    private Observable<List<String>> delete(){
+        return Observable.create(new ObservableOnSubscribe<Boolean>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Boolean> emitter) throws Exception {
+                        emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect()));
+                        emitter.onComplete();
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                /*.repeatUntil(new BooleanSupplier() {
+                    @Override
+                    public boolean getAsBoolean() throws Exception {
+                        boolean hasSD = MemoryManager.getInstance().hasSD();
+                        List<StorageBean> storageList;
+                        long total = 0;
+                        long used = 0;
+                        if (hasSD) {
+                            // 判断SD卡
+                            storageList = MemoryManager.getInstance().getStorage(true);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        } else {
+                            // 判断内部
+                            storageList = MemoryManager.getInstance().getStorage(false);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        }
+                        boolean b = used * 1.0f / total >= 0.01;
+                        Log.e("zjj_file", "是否超过 until:" + b);
+                        return !b;
+                    }
+                })*/
+                .filter(new Predicate<Boolean>() {
+                    @Override
+                    public boolean test(Boolean aBoolean) throws Exception {
+                        boolean hasSD = MemoryManager.getInstance().hasSD();
+                        List<StorageBean> storageList;
+                        long total = 0;
+                        long used = 0;
+                        if (hasSD) {
+                            // 判断SD卡
+                            storageList = MemoryManager.getInstance().getStorage(true);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        } else {
+                            // 判断内部
+                            storageList = MemoryManager.getInstance().getStorage(false);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        }
+                        boolean b = used * 1.0f / total >= 0.01;
+                        Log.e("zjj_file", "是否超过filter:" + b);
+                        return b;
+                    }
+                })
+                .flatMap(new Function<Boolean, ObservableSource<StorageBean>>() {
+                    @Override
+                    public ObservableSource<StorageBean> apply(Boolean aBoolean) throws Exception {
+                        boolean hasSD = MemoryManager.getInstance().hasSD();
+                        return Observable.fromIterable(MemoryManager.getInstance().getStorage(hasSD));
+                    }
+                }).flatMap(new Function<StorageBean, ObservableSource<String>>() {
+                    @Override
+                    public ObservableSource<String> apply(StorageBean storageBean) throws Exception {
+                        return setObservable(storageBean.getRootPath());
+                    }
+                })
+                .flatMap(new Function<String, ObservableSource<String>>() {
+                    @Override
+                    public ObservableSource<String> apply(String s) throws Exception {
+                        return setObservable(s);
+                    }
+                }).flatMap(new Function<String, ObservableSource<String>>() {
+                    @Override
+                    public ObservableSource<String> apply(String s) throws Exception {
+                        return setObservable(s);
+                    }
+                })
+                .filter(new Predicate<String>() {
+                    @Override
+                    public boolean test(String s) throws Exception {
+                        Utils.deleteFileWithDir(new File(s));
+                        Log.e("zjj_file","delete 操作");
+                        Log.e("zjj_file", "打印路径:"+s);
+                        return true;
+                    }
+                })
+                .repeatUntil(new BooleanSupplier() {
+                    @Override
+                    public boolean getAsBoolean() throws Exception {
+
+                        boolean hasSD = MemoryManager.getInstance().hasSD();
+                        List<StorageBean> storageList;
+                        long total = 0;
+                        long used = 0;
+                        if (hasSD) {
+                            // 判断SD卡
+                            storageList = MemoryManager.getInstance().getStorage(true);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        } else {
+                            // 判断内部
+                            storageList = MemoryManager.getInstance().getStorage(false);
+                            for (StorageBean storageBean : storageList) {
+                                total += storageBean.getTotal();
+                                used += storageBean.getUsed();
+                            }
+                        }
+                        boolean b = used * 1.0f / total >= 0.01;
+                        Log.e("zjj_file", "是否超过 until:" + b);
+                        return !b;
+                    }
+                })
+                .toList().toObservable();
+    }
+
+    private Observable<String> setObservable(String dirPath) {
+        List<String> pathList = Utils.getSubFolderAndFileNames(dirPath);
+        if (pathList.size() <= 0) {
+            return Observable.just("empty");
+        }
+        Collections.sort(pathList);
+        for(String path : pathList) {
+            List<String> list = Utils.getSubFolderAndFileNames(path);
+            if (list.size() <= 0) {
+                Utils.deleteFileWithDir(new File(path));
+                continue;
+            }
+            return Observable.just(path);
+        }
+        return Observable.just("empty");
+    }
+
+
 }
