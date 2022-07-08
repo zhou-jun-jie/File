@@ -1,5 +1,7 @@
 package com.zjj.file;
 
+import com.zjj.file.bean.StorageBean;
+
 import java.io.File;
 import java.util.List;
 
@@ -12,22 +14,11 @@ import io.reactivex.Observable;
  */
 public class RxFile implements FileApi {
 
-    private FileApiImp fileApiImp;
+    private final FileApiImp fileApiImp;
 
-    private RxFile() {
-    }
-
-    private static class FileHolder {
-        private static final RxFile INSTANCE = new RxFile();
-    }
-
-    public static RxFile getInstance() {
-        return FileHolder.INSTANCE;
-    }
-
-    public void setConfig(FileConfig config) {
-        fileApiImp = new FileApiImp(config.isShowLog(), config.getSaveName(), config.getCleanPercent(),
-                config.getRetainPercent(), config.getFileNum(),config.getClearTime(),config.getClearTimeUnit());
+    public RxFile(FileConfig config) {
+        fileApiImp = new FileApiImp(config.isShowLog(), config.getCleanPercent(),
+                config.getRetainPercent(), config.getFileNum(), config.getClearTime(), config.getClearTimeUnit());
         // 初始化目录
         createSavePath(config.getSaveName());
     }
@@ -38,28 +29,8 @@ public class RxFile implements FileApi {
     }
 
     @Override
-    public void createDir(String... dirs) {
-        fileApiImp.createDir(dirs);
-    }
-
-    @Override
-    public void deleteDir(String filePath) {
-        fileApiImp.deleteDir(filePath);
-    }
-
-    @Override
-    public File createFile(String filePath) {
-        return fileApiImp.createFile(filePath);
-    }
-
-    @Override
-    public void deleteFile(String fileName) {
-        fileApiImp.deleteFile(fileName);
-    }
-
-    @Override
     public String getDirPath(String dirName, long time) {
-        return fileApiImp.getDirPath(dirName,time);
+        return fileApiImp.getDirPath(dirName, time);
     }
 
     @Override
@@ -70,5 +41,20 @@ public class RxFile implements FileApi {
     @Override
     public Observable<List<String>> autoClear() {
         return fileApiImp.autoClear();
+    }
+
+    @Override
+    public List<StorageBean> getStorage() {
+        return fileApiImp.getStorage();
+    }
+
+    @Override
+    public Observable<Boolean> formatAll() {
+        return fileApiImp.formatAll();
+    }
+
+    @Override
+    public Observable<Boolean> format(StorageBean storageBean) {
+        return fileApiImp.format(storageBean);
     }
 }

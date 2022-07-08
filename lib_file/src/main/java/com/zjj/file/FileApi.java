@@ -1,8 +1,7 @@
 package com.zjj.file;
 
-import java.io.File;
+import com.zjj.file.bean.StorageBean;
 import java.util.List;
-
 import io.reactivex.Observable;
 
 /**
@@ -23,35 +22,6 @@ public interface FileApi {
     void createSavePath(String rootName);
 
     /**
-     * 创建文件夹
-     *
-     * @param dirs 1-n个文件目录
-     */
-    void createDir(String... dirs);
-
-    /**
-     * 删除文件夹
-     *
-     * @param filePath 文件路径
-     */
-    void deleteDir(String filePath);
-
-
-    /**
-     * 创建文件
-     *
-     * @param filePath 文件路径
-     */
-    File createFile(String filePath);
-
-    /**
-     * 删除文件
-     *
-     * @param fileName 文件名称
-     */
-    void deleteFile(String fileName);
-
-    /**
      * 获取文件夹路径
      *
      * @param dirName 文件夹名称
@@ -69,4 +39,20 @@ public interface FileApi {
      */
     Observable<List<String>> autoClear();
 
+    /**
+     * 获取SD卡的内存
+     */
+    List<StorageBean> getStorage();
+
+    /**
+     * 格式化所有SD卡
+     */
+    Observable<Boolean> formatAll();
+
+    /**
+     * 格式化具体的SD卡
+     *
+     * @param storageBean 内存实体类
+     */
+    Observable<Boolean> format(StorageBean storageBean);
 }

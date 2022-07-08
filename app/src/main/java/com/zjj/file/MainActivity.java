@@ -66,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
         setData();
 
         // 初始化操作
-        FileManager.getInstance().init();
+        FileManager.getInstance().init(this);
     }
 
 

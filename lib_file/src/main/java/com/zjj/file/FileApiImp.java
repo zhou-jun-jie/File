@@ -3,17 +3,13 @@ package com.zjj.file;
 import android.annotation.SuppressLint;
 import android.text.TextUtils;
 import android.util.Log;
-
 import com.zjj.file.bean.StorageBean;
-
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.functions.Function;
@@ -36,7 +32,6 @@ public class FileApiImp implements FileApi {
      * 是否显示日志
      */
     private final boolean showLog;
-    private String saveName;
     private final float cleanPercent;
     private final float retainPercent;
     private final int fileSize;
@@ -46,10 +41,9 @@ public class FileApiImp implements FileApi {
     // 文件名+地址的Map
     private final HashMap<String, String> fileMap;
 
-    public FileApiImp(boolean showLog, String saveName, float cleanPercent,
+    public FileApiImp(boolean showLog, float cleanPercent,
                       float retainPercent, int fileSize, long clearTime, TimeUnit clearTimeUnit) {
         this.showLog = showLog;
-        this.saveName = saveName;
         this.cleanPercent = cleanPercent;
         this.retainPercent = retainPercent;
         this.fileSize = fileSize;
@@ -68,28 +62,6 @@ public class FileApiImp implements FileApi {
     }
 
     @Override
-    public void createDir(String... dirs) {
-        for (String dir : dirs) {
-            Utils.mkDirs(dir);
-        }
-    }
-
-    @Override
-    public void deleteDir(String filePath) {
-        Utils.deleteFileWithDir(new File(filePath));
-    }
-
-    @Override
-    public File createFile(String filePath) {
-        return Utils.createFile(filePath);
-    }
-
-    @Override
-    public void deleteFile(String fileName) {
-        Utils.deleteFile(fileName);
-    }
-
-    @Override
     public String getDirPath(String dirName, long time) {
         return createDateDirs(dirName, time);
     }
@@ -102,7 +74,6 @@ public class FileApiImp implements FileApi {
     @SuppressLint("CheckResult")
     @Override
     public Observable<List<String>> autoClear() {
-
         return Observable.interval(1, clearTime, clearTimeUnit)
                 .subscribeOn(Schedulers.io())
                 .flatMap((Function<Long, ObservableSource<Boolean>>)
@@ -122,6 +93,28 @@ public class FileApiImp implements FileApi {
                 })
                 .repeatUntil(() -> !filter0rRepeat(false))
                 .toList().toObservable();
+    }
+
+    @Override
+    public List<StorageBean> getStorage() {
+        boolean hasSD = MemoryManager.getInstance().hasSD();
+        return MemoryManager.getInstance().getStorage(hasSD);
+    }
+
+    @Override
+    public Observable<Boolean> formatAll() {
+        return Observable.create(emitter -> {
+            MemoryManager.getInstance().formatSD();
+            emitter.onNext(true);
+        });
+    }
+
+    @Override
+    public Observable<Boolean> format(StorageBean storageBean) {
+        return Observable.create(emitter -> {
+            MemoryManager.getInstance().formatSD(storageBean);
+            emitter.onNext(true);
+        });
     }
 
     private Observable<String> setObservable(String dirPath) {
@@ -264,7 +257,7 @@ public class FileApiImp implements FileApi {
                     Log.e(TAG, "创建存放路径:" + dirPath + ",是否成功:" + isSuccess);
                 }
             } else {
-                fileMap.put(dirName,newPath);
+                fileMap.put(dirName, newPath);
             }
         }
         return fileMap.get(dirName);
