@@ -64,6 +64,9 @@ public class MainActivity extends AppCompatActivity {
                 })
                 .start();
         setData();
+
+        // 初始化操作
+        FileManager.getInstance().init();
     }
 
 
@@ -385,10 +388,6 @@ public class MainActivity extends AppCompatActivity {
     /**
      *  TODO 真正实现
      */
-    public void init(View view) {
-        FileManager.getInstance().init();
-    }
-
     public void createDir(View view) {
         String rootPath = FileManager.getInstance().getRootPath();
         Log.e("zjj_test","rootPath:"+rootPath);
@@ -408,6 +407,5 @@ public class MainActivity extends AppCompatActivity {
         String kly = FileManager.getInstance().getDirPath("Kly");
         Log.e("zjj_test","Kly:"+kly);
     }
-
 
 }

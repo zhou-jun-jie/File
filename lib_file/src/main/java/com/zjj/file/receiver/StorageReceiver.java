@@ -26,18 +26,16 @@ public class StorageReceiver {
         mReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                //intent.getAction());获取存储设备当前状态
                 Log.i("zjj_memory", "BroadcastReceiver:" + intent.getAction());
                 if (Intent.ACTION_MEDIA_UNMOUNTED.equals(intent.getAction())) {
                     // 拔出状态-> MEDIA_EJECT && MEDIA_UNMOUNTED
                     Log.e("zjj_memory", "已拔出");
-                    /*StorageUtils.removePath(intent.getData().getPath());*/
+                    MemoryManager.getInstance().removePath(intent.getData().getPath());
                 } else if (Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) {
                     // 插入状态-> MEDIA_CHECKING && MEDIA_MOUNTED 去刷新
                     Log.e("zjj_memory", "已插入");
                     MemoryManager.getInstance().initSD(context);
                 }
-                //intent.getData().getPath());获取存储设备路径
                 Log.i("zjj_memory", "path:" + intent.getData().getPath());
             }
 

@@ -1,15 +1,6 @@
 package com.zjj.file;
 
-import android.annotation.SuppressLint;
-
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.functions.Consumer;
-import io.reactivex.functions.Function;
-import io.reactivex.schedulers.Schedulers;
 
 /**
  * name：zjj
@@ -39,7 +30,7 @@ public class FileManager {
         fileConfig = new FileConfig.Builder()
                 .showLog(true)                          // 显示日志 "ZJJ_FILE"
                 .setSaveName("ZJJ_TEST")                // 存储路径名称
-                .setFileNum(1)                        // 每个文件夹的数量限制
+                .setFileNum(1)                          // 每个文件夹的数量限制
                 .setCleanPercent(0.9f)                  // 达到清理的阈值 0.9f 代表内存的90%
                 .setRetainPercent(0.5f)                 // 保留的阈值 0.5f 清理达到50%时停止清理
                 .setClearTime(1,TimeUnit.DAYS)

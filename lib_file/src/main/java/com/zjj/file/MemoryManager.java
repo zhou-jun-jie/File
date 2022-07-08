@@ -113,7 +113,7 @@ public class MemoryManager {
         return sdPath;
     }
 
-    public static void removePath(LinkedHashMap<String, StorageBean> sdMap, String path) {
+    public void removePath(String path) {
         Set<Map.Entry<String, StorageBean>> entrySet = sdMap.entrySet();
         Iterator<Map.Entry<String, StorageBean>> iterator = entrySet.iterator();
         while (iterator.hasNext()) {

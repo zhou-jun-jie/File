@@ -10,12 +10,6 @@
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="init"
-        android:text="初始化.创建根目录" />
-
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:onClick="createDir"
         android:text="创建文件目录" />
 

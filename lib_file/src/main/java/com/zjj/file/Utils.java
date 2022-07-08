@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -204,7 +205,7 @@ public class Utils {
     public static String getMonth(long time) {
         int month = getCalendar(time).get(Calendar.MONTH) + 1;
         if (month < 10) {
-            return "0"+month;
+            return "0" + month;
         }
         return String.valueOf(month);
     }
@@ -212,7 +213,7 @@ public class Utils {
     public static String getMonth() {
         int month = getCalendar(System.currentTimeMillis()).get(Calendar.MONTH) + 1;
         if (month < 10) {
-            return "0"+month;
+            return "0" + month;
         }
         return String.valueOf(month);
     }
@@ -222,17 +223,17 @@ public class Utils {
      * @return 获取当前日
      */
     public static String getDay(long time) {
-        int day = getCalendar(time).get(Calendar.DAY_OF_MONTH) ;
+        int day = getCalendar(time).get(Calendar.DAY_OF_MONTH);
         if (day < 10) {
-            return "0"+day;
+            return "0" + day;
         }
         return String.valueOf(day);
     }
 
     public static String getDay() {
-        int day = getCalendar(System.currentTimeMillis()).get(Calendar.DAY_OF_MONTH) ;
+        int day = getCalendar(System.currentTimeMillis()).get(Calendar.DAY_OF_MONTH);
         if (day < 10) {
-            return "0"+day;
+            return "0" + day;
         }
         return String.valueOf(day);
     }
@@ -294,6 +295,12 @@ public class Utils {
     }
 
 
+    /**
+     * 获取文件夹所有的文件路径
+     *
+     * @param folderPath 文件夹路径
+     * @return 集合
+     */
     public static List<String> getSubFolderAndFileNames(String folderPath) {
         List<String> fileNames = new ArrayList<>();
         File file = new File(folderPath);
@@ -310,6 +317,23 @@ public class Utils {
             }
         }
         return fileNames;
+    }
+
+    /**
+     * 判断是否存在文件夹
+     *
+     * @param path 文件夹路径
+     * @return true有, false无
+     */
+    public static String isDirExist(String path) {
+        if (TextUtils.isEmpty(path)) {
+            return "";
+        }
+        File file = new File(path);
+        if (!file.exists()) {
+            file.mkdir();
+        }
+        return file.getAbsolutePath();
     }
 
 

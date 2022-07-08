@@ -250,8 +250,10 @@ public class FileApiImp implements FileApi {
             }
         } else {
             // 不为空
+            // 避免手动删除了该文件夹导致无法创建新的
+            String newPath = Utils.isDirExist(path);
             // 获取文件数量
-            int folderSize = Utils.getFolderSize(path);
+            int folderSize = Utils.getFolderSize(newPath);
             if (folderSize >= fileSize) {
                 // 获取文件夹的编号
                 int num = Utils.getNum(path, path.length() - 1);
@@ -261,6 +263,8 @@ public class FileApiImp implements FileApi {
                 if (showLog) {
                     Log.e(TAG, "创建存放路径:" + dirPath + ",是否成功:" + isSuccess);
                 }
+            } else {
+                fileMap.put(dirName,newPath);
             }
         }
         return fileMap.get(dirName);

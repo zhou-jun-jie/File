@@ -4,6 +4,7 @@ package com.zjj.file.bean;
  * name：zjj
  * date：2022/7/1
  * desc：清除的实体类
+ * TODO 待封装
  */
 public class ClearBean {
 
