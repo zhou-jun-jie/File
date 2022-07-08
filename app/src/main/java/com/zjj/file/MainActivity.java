@@ -13,23 +13,14 @@ import com.yanzhenjie.permission.AndPermission;
 import com.yanzhenjie.permission.runtime.Permission;
 import com.zjj.file.bean.StorageBean;
 import com.zjj.file.receiver.StorageReceiver;
-
 import java.io.File;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import io.reactivex.MaybeSource;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
-import io.reactivex.Observer;
-import io.reactivex.SingleObserver;
-import io.reactivex.SingleSource;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BooleanSupplier;
 import io.reactivex.functions.Consumer;
@@ -63,63 +54,15 @@ public class MainActivity extends AppCompatActivity {
                     // Storage permission are not allowed.
                 })
                 .start();
-        setData();
+//        setData();
 
         // 初始化操作
         FileManager.getInstance().init(this);
     }
 
 
-    public void getMemory1(View view) {
-        MemoryManager.getInstance().initSD(this);
-        setData();
-    }
-
-    public void setData() {
-        TextView tvName1 = findViewById(R.id.sd_name_1);
-        TextView tvTotal1 = findViewById(R.id.sd_total_1);
-        TextView tvUsed1 = findViewById(R.id.sd_used_1);
-
-        LinkedHashMap<String, StorageBean> sdMap = MemoryManager.getInstance().sdMap;
-        if (sdMap.size() <= 0) {
-            return;
-        }
-
-        String sd_1 = sdMap.keySet().iterator().next();
-        tvName1.setText(sd_1 + ",hasSD:" + MemoryManager.getInstance().hasSD() + ",文件数量:" + Utils.getFolderSize("/storage/emulated/0/file"));
-        StorageBean storageBean = sdMap.get(sd_1);
-        tvTotal1.setText("total:" + MemoryManager.getInstance().getUnit(storageBean.getTotal(), 1000));
-        tvUsed1.setText("used:" + MemoryManager.getInstance().getUnit(storageBean.getUsed(), 1000));
-
-    }
-
-    private long start;
-
-    public void format1(View view) {
-        Disposable subscribe = Observable.create(new ObservableOnSubscribe<Boolean>() {
-                    @Override
-                    public void subscribe(ObservableEmitter<Boolean> emitter) throws Exception {
-                        start = System.currentTimeMillis();
-                        MemoryManager.getInstance().formatSD();
-                        emitter.onNext(true);
-                    }
-                }).subscribeOn(Schedulers.io())
-                .subscribe(new Consumer<Boolean>() {
-                    @Override
-                    public void accept(Boolean aBoolean) throws Exception {
-                        Log.e("zjj_memory", "format:" + aBoolean + ",time:" + (System.currentTimeMillis() - start));
-                    }
-                });
-
-    }
-
-
-
-
-
-
     /**
-     *  todo start ---------------------测试-----------------------
+     * todo start ---------------------测试-----------------------
      */
     /*@SuppressLint("CheckResult")
     public void test(View view) {
@@ -132,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }*/
-
     @SuppressLint("CheckResult")
     private Observable<List<String>> delete() {
         return Observable.create(new ObservableOnSubscribe<Boolean>() {
@@ -386,26 +328,69 @@ public class MainActivity extends AppCompatActivity {
 
 
     /**
-     *  TODO 真正实现
+     * TODO 真正实现
      */
     public void createDir(View view) {
         String rootPath = FileManager.getInstance().getRootPath();
-        Log.e("zjj_test","rootPath:"+rootPath);
+        Log.e("zjj_test", "rootPath:" + rootPath);
     }
 
     public void getImage(View view) {
         String image = FileManager.getInstance().getDirPath("Image");
-        Log.e("zjj_test","image:"+image);
+        Log.e("zjj_test", "image:" + image);
     }
 
     public void getVideo(View view) {
         String video = FileManager.getInstance().getDirPath("Video");
-        Log.e("zjj_test","Video:"+video);
+        Log.e("zjj_test", "Video:" + video);
     }
 
     public void getKly(View view) {
         String kly = FileManager.getInstance().getDirPath("Kly");
-        Log.e("zjj_test","Kly:"+kly);
+        Log.e("zjj_test", "Kly:" + kly);
     }
 
+
+    public void getMemory1(View view) {
+        setData();
+    }
+
+    @SuppressLint("CheckResult")
+    public void setData() {
+        TextView tvName1 = findViewById(R.id.sd_name_1);
+        TextView tvTotal1 = findViewById(R.id.sd_total_1);
+        TextView tvUsed1 = findViewById(R.id.sd_used_1);
+
+        FileManager.getInstance().getStorageList().subscribe(new Consumer<List<StorageBean>>() {
+            @Override
+            public void accept(List<StorageBean> storageList) throws Exception {
+                if (storageList.size() > 0) {
+                    String sd_1 = storageList.get(0).getPath();
+                    tvName1.setText(sd_1 + ",hasSD:" + MemoryManager.getInstance().hasSD() + ",文件数量:" + Utils.getFolderSize("/storage/emulated/0/file"));
+                    StorageBean storageBean = storageList.get(0);
+                    tvTotal1.setText("total:" + MemoryManager.getInstance().getUnit(storageBean.getTotal(), 1000));
+                    tvUsed1.setText("used:" + MemoryManager.getInstance().getUnit(storageBean.getUsed(), 1000));
+                }
+            }
+        });
+
+
+
+    }
+
+    @SuppressLint("CheckResult")
+    public void format1(View view) {
+        FileManager.getInstance().formatAll()
+                .subscribe(new Consumer<Boolean>() {
+            @Override
+            public void accept(Boolean aBoolean) throws Exception {
+                Log.e("zjj_test", "格式化是否成功:"+String.valueOf(aBoolean));
+            }
+        });
+
+    }
+
+    public void test(View view) {
+
+    }
 }

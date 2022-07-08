@@ -42,7 +42,7 @@ public interface FileApi {
     /**
      * 获取SD卡的内存
      */
-    List<StorageBean> getStorage();
+    Observable<List<StorageBean>> getStorage();
 
     /**
      * 格式化所有SD卡

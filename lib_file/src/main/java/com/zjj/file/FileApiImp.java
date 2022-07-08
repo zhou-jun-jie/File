@@ -3,13 +3,17 @@ package com.zjj.file;
 import android.annotation.SuppressLint;
 import android.text.TextUtils;
 import android.util.Log;
+
 import com.zjj.file.bean.StorageBean;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.functions.Function;
@@ -96,25 +100,37 @@ public class FileApiImp implements FileApi {
     }
 
     @Override
-    public List<StorageBean> getStorage() {
-        boolean hasSD = MemoryManager.getInstance().hasSD();
-        return MemoryManager.getInstance().getStorage(hasSD);
+    public Observable<List<StorageBean>> getStorage() {
+        return Observable.create((ObservableOnSubscribe<Boolean>)
+                        emitter -> emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect())))
+                .subscribeOn(Schedulers.io())
+                .flatMap((Function<Boolean, ObservableSource<List<StorageBean>>>)
+                        aBoolean -> Observable.just(MemoryManager.getInstance().getStorage(MemoryManager.getInstance().hasSD())));
     }
 
     @Override
     public Observable<Boolean> formatAll() {
         return Observable.create(emitter -> {
-            MemoryManager.getInstance().formatSD();
-            emitter.onNext(true);
-        });
+                    MemoryManager.getInstance().formatSD();
+                    emitter.onNext(true);
+                    if (showLog) {
+                        Log.e(TAG, "formatAll");
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .map(o -> (Boolean) o);
     }
 
     @Override
     public Observable<Boolean> format(StorageBean storageBean) {
         return Observable.create(emitter -> {
-            MemoryManager.getInstance().formatSD(storageBean);
-            emitter.onNext(true);
-        });
+                    MemoryManager.getInstance().formatSD(storageBean);
+                    emitter.onNext(true);
+                    if (showLog) {
+                        Log.e(TAG, "format信息:" + storageBean.toString());
+                    }
+                }).subscribeOn(Schedulers.io())
+                .map(o -> (Boolean) o);
     }
 
     private Observable<String> setObservable(String dirPath) {

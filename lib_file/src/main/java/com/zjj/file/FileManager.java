@@ -1,13 +1,10 @@
 package com.zjj.file;
 
 import android.content.Context;
-
 import com.zjj.file.bean.StorageBean;
 import com.zjj.file.receiver.StorageReceiver;
-
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import io.reactivex.Observable;
 
 /**
@@ -78,7 +75,7 @@ public class FileManager {
     /**
      * 获取所有的内存集合
      */
-    public List<StorageBean> getStorageList() {
+    public Observable<List<StorageBean>> getStorageList() {
         return rxFile.getStorage();
     }
 

@@ -44,7 +44,7 @@ public class RxFile implements FileApi {
     }
 
     @Override
-    public List<StorageBean> getStorage() {
+    public Observable<List<StorageBean>> getStorage() {
         return fileApiImp.getStorage();
     }
 
