@@ -1,11 +1,10 @@
-package com.zjj.file.receiver;
+package com.zjj.file;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
-import com.zjj.file.MemoryManager;
 
 /**
  * name：zjj
@@ -25,17 +24,17 @@ public class StorageReceiver {
         mReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.i("zjj_memory", "BroadcastReceiver:" + intent.getAction());
+                Log.i("ZJJ_FILE", "BroadcastReceiver:" + intent.getAction());
                 if (Intent.ACTION_MEDIA_UNMOUNTED.equals(intent.getAction())) {
                     // 拔出状态-> MEDIA_EJECT && MEDIA_UNMOUNTED
-                    Log.e("zjj_memory", "已拔出");
+                    Log.e("ZJJ_FILE", "已拔出");
                     MemoryManager.getInstance().removePath(intent.getData().getPath());
                 } else if (Intent.ACTION_MEDIA_MOUNTED.equals(intent.getAction())) {
                     // 插入状态-> MEDIA_CHECKING && MEDIA_MOUNTED 去刷新
-                    Log.e("zjj_memory", "已插入");
+                    Log.e("ZJJ_FILE", "已插入");
                     MemoryManager.getInstance().initSD(context);
                 }
-                Log.i("zjj_memory", "path:" + intent.getData().getPath());
+                Log.i("ZJJ_FILE", "path:" + intent.getData().getPath());
             }
 
         };

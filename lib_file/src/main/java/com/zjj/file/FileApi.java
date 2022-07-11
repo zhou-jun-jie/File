@@ -1,7 +1,9 @@
 package com.zjj.file;
 
 import com.zjj.file.bean.StorageBean;
+
 import java.util.List;
+
 import io.reactivex.Observable;
 
 /**
@@ -10,16 +12,6 @@ import io.reactivex.Observable;
  * desc：文件接口
  */
 public interface FileApi {
-
-    /**
-     * 创建文件存储路径
-     * 例如:包名 com.maxvision.test
-     * 无SD卡路径为: storage/emulated/0/test
-     * 有SD卡路径为: sd卡路径(可变的)/Android/data/com.maxvision.test
-     *
-     * @param rootName 文件夹路径
-     */
-    void createSavePath(String rootName);
 
     /**
      * 获取文件夹路径
@@ -32,7 +24,7 @@ public interface FileApi {
     /**
      * 获取文件夹存储的根路径
      */
-    String getRootPath();
+    Observable<String> getSavePath();
 
     /**
      * 自动清理
@@ -45,14 +37,36 @@ public interface FileApi {
     Observable<List<StorageBean>> getStorage();
 
     /**
+     * 耗时操作
      * 格式化所有SD卡
+     * 注意: 使用此方法,需重启设备
      */
     Observable<Boolean> formatAll();
 
     /**
+     * 耗时操作
      * 格式化具体的SD卡
+     * 注意: 使用此方法,需重启设备
      *
      * @param storageBean 内存实体类
      */
     Observable<Boolean> format(StorageBean storageBean);
+
+
+    /**
+     * 耗时操作
+     * 删除单独的SD卡(无需重启设备)
+     *
+     * @param storageBean 内存的实体类
+     * @return true代表成功, false代表失败
+     */
+    Observable<Boolean> deleteSingle(StorageBean storageBean);
+
+
+    /**
+     * 耗时操作
+     * 删除所有的SD卡文件(无需重启设备)
+     */
+    Observable<List<Boolean>> deleteAll();
+
 }

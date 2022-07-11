@@ -2,7 +2,6 @@ package com.zjj.file;
 
 import android.util.Log;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -16,11 +15,6 @@ public class FileConfig {
      * 是否显示日志
      */
     private boolean showLog;
-
-    /**
-     * 存储根路径名称,默认为包名
-     */
-    private String saveName = Utils.getPackageName();
 
     /**
      * 达到多少需要清理的百分比,默认为0.9f
@@ -47,7 +41,6 @@ public class FileConfig {
      */
     private TimeUnit clearTimeUnit;
 
-
     static class Builder {
 
         private final FileConfig fileConfig;
@@ -58,11 +51,6 @@ public class FileConfig {
 
         public Builder showLog(boolean showLog) {
             fileConfig.showLog = showLog;
-            return this;
-        }
-
-        public Builder setSaveName(String saveName) {
-            fileConfig.saveName = saveName;
             return this;
         }
 
@@ -102,14 +90,6 @@ public class FileConfig {
 
     public void setShowLog(boolean showLog) {
         this.showLog = showLog;
-    }
-
-    public String getSaveName() {
-        return saveName;
-    }
-
-    public void setSaveName(String saveName) {
-        this.saveName = saveName;
     }
 
     public float getCleanPercent() {
@@ -156,7 +136,6 @@ public class FileConfig {
     public String toString() {
         return "FileConfig{" +
                 "showLog=" + showLog +
-                ", saveName='" + saveName + '\'' +
                 ", cleanPercent=" + cleanPercent +
                 ", retainPercent=" + retainPercent +
                 ", fileNum=" + fileNum +

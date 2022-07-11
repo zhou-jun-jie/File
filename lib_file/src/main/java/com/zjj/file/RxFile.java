@@ -2,7 +2,6 @@ package com.zjj.file;
 
 import com.zjj.file.bean.StorageBean;
 
-import java.io.File;
 import java.util.List;
 
 import io.reactivex.Observable;
@@ -19,13 +18,6 @@ public class RxFile implements FileApi {
     public RxFile(FileConfig config) {
         fileApiImp = new FileApiImp(config.isShowLog(), config.getCleanPercent(),
                 config.getRetainPercent(), config.getFileNum(), config.getClearTime(), config.getClearTimeUnit());
-        // 初始化目录
-        createSavePath(config.getSaveName());
-    }
-
-    @Override
-    public void createSavePath(String rootPath) {
-        fileApiImp.createSavePath(rootPath);
     }
 
     @Override
@@ -34,8 +26,8 @@ public class RxFile implements FileApi {
     }
 
     @Override
-    public String getRootPath() {
-        return fileApiImp.getRootPath();
+    public Observable<String> getSavePath() {
+        return fileApiImp.getSavePath();
     }
 
     @Override
@@ -56,5 +48,15 @@ public class RxFile implements FileApi {
     @Override
     public Observable<Boolean> format(StorageBean storageBean) {
         return fileApiImp.format(storageBean);
+    }
+
+    @Override
+    public Observable<Boolean> deleteSingle(StorageBean storageBean) {
+        return fileApiImp.deleteSingle(storageBean);
+    }
+
+    @Override
+    public Observable<List<Boolean>> deleteAll() {
+        return fileApiImp.deleteAll();
     }
 }

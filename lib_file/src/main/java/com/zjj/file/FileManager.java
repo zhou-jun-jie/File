@@ -1,10 +1,15 @@
 package com.zjj.file;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.text.TextUtils;
+import android.util.Log;
+
 import com.zjj.file.bean.StorageBean;
-import com.zjj.file.receiver.StorageReceiver;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import io.reactivex.Observable;
 
 /**
@@ -29,12 +34,13 @@ public class FileManager {
 
     /**
      * 初始化配置
+     *
+     * @param context 上下文
      */
     public void init(Context context) {
         // 文件配置
         FileConfig fileConfig = new FileConfig.Builder()
                 .showLog(true)                          // 显示日志 "ZJJ_FILE"
-                .setSaveName("ZJJ_TEST")                // 存储路径名称
                 .setFileNum(1)                          // 每个文件夹的数量限制
                 .setCleanPercent(0.9f)                  // 达到清理的阈值 0.9f 代表内存的90%
                 .setRetainPercent(0.5f)                 // 保留的阈值 0.5f 清理达到50%时停止清理
@@ -44,14 +50,32 @@ public class FileManager {
         StorageReceiver storageReceiver = new StorageReceiver();
         storageReceiver.init(context);
         rxFile = new RxFile(fileConfig);
+        // 轮询获取路径
+        getSavePath();
+        // 轮询清理
+        autoClear();
     }
 
     /**
      * 获取当前存储路径
      */
-    public String getRootPath() {
-        return rxFile.getRootPath();
+    @SuppressLint("CheckResult")
+    public void getSavePath() {
+        rxFile.getSavePath().subscribe(s -> {
+            if (!TextUtils.isEmpty(s)) {
+                Log.e("zjj_file", "当前存储路径:" + s);
+            }
+        });
     }
+
+    @SuppressLint("CheckResult")
+    private void autoClear() {
+        rxFile.autoClear().subscribe(strings -> {
+            if (null != strings && strings.size() > 0)
+                Log.e("zjj_file", "自动清理路径:" + strings);
+        });
+    }
+
 
     /**
      * 获取具体的文件夹(默认以当前的毫秒值来设置)
@@ -91,6 +115,20 @@ public class FileManager {
      */
     public Observable<Boolean> formatSD(StorageBean storageBean) {
         return rxFile.format(storageBean);
+    }
+
+    /**
+     * 删除单个目录(SD卡)的文件
+     */
+    public Observable<Boolean> deleteSingle(StorageBean storageBean) {
+        return rxFile.deleteSingle(storageBean);
+    }
+
+    /**
+     * 删除所有目录(SD卡)的文件
+     */
+    public Observable<List<Boolean>> deleteAll() {
+        return rxFile.deleteAll();
     }
 
 }

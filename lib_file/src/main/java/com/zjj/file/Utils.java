@@ -9,19 +9,18 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * name：zjj
  * date：2022/7/1
  * desc：文件管理所需工具类
  */
-public class Utils {
+class Utils {
 
     /**
      * 通过反射获取application
@@ -94,45 +93,14 @@ public class Utils {
                 return file.mkdir();
             }
         } catch (Exception e) {
-            Log.e("zjj_memory", "异常:" + e.getCause());
+            Log.e("ZJJ_FILE", "异常:" + e.getCause());
             e.printStackTrace();
         }
         return true;
     }
 
     /**
-     * 创建文件
-     *
-     * @param path 文件路径
-     * @return 文件File
-     */
-    public static File createFile(String path) {
-        if (!TextUtils.isEmpty(path)) {
-            File file = new File(path);
-            File parentFile = file.getParentFile();
-            if (null != parentFile && !parentFile.exists()) {
-                parentFile.mkdirs();
-            }
-            if (!file.exists()) {
-                try {
-                    if (file.createNewFile()) {
-                        return file;
-                    } else {
-                        return null;
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            } else {
-                return file;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 递归删除文件夹中的文件，含文件夹
+     * 递归删除文件夹中的文件，含文件夹(含删除的文件夹路径)
      */
     public static void deleteFileWithDir(File dir) {
         if (null == dir || !dir.exists() || !dir.isDirectory()) return;
@@ -141,6 +109,17 @@ public class Utils {
             else if (file.isDirectory()) deleteDirWithFile(file); //文件夹继续递归
         }
         dir.delete();
+    }
+
+    /**
+     * 递归删除文件夹中的文件，含文件夹(不含自身文件夹)
+     */
+    public static void deleteFileWithDirNotSelf(File dir) {
+        if (null == dir || !dir.exists() || !dir.isDirectory()) return;
+        for (File file : dir.listFiles()) {
+            if (file.isFile()) file.delete(); // 删除所有文件
+            else if (file.isDirectory()) deleteDirWithFile(file); //文件夹继续递归
+        }
     }
 
     /**
@@ -336,5 +315,23 @@ public class Utils {
         return file.getAbsolutePath();
     }
 
+
+    private static final String[] units = {"B", "KB", "MB", "GB", "TB"};
+
+    /**
+     * 进制转换
+     */
+    public static String getUnit(float size, float base) {
+        int index = 0;
+        while (size > base && index < 4) {
+            size = size / base;
+            index++;
+        }
+        return String.format(Locale.getDefault(), " %.0f %s ", size, units[index]);
+    }
+
+    public static String getUnit(float size) {
+        return getUnit(size,1000);
+    }
 
 }

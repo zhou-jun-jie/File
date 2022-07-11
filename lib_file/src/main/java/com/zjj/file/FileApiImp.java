@@ -10,10 +10,10 @@ import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.functions.Function;
@@ -57,37 +57,61 @@ public class FileApiImp implements FileApi {
     }
 
     @Override
-    public void createSavePath(String rootName) {
-        this.savePath = MemoryManager.getInstance().getSavePath("", rootName);
-        boolean isSuccess = Utils.mkDirs(savePath);
-        if (showLog) {
-            Log.e(TAG, "创建文件保存目录:" + savePath + ",isSuccess:" + isSuccess);
-        }
-    }
-
-    @Override
     public String getDirPath(String dirName, long time) {
         return createDateDirs(dirName, time);
     }
 
     @Override
-    public String getRootPath() {
-        return savePath;
+    public Observable<String> getSavePath() {
+        return Observable.interval(0, 10, TimeUnit.SECONDS)
+                .subscribeOn(Schedulers.io())
+                .flatMap((Function<Long, ObservableSource<Boolean>>)
+                        along -> Observable.create((ObservableOnSubscribe<Boolean>)
+                                emitter -> emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect())))
+                ).flatMap((Function<Boolean, ObservableSource<String>>) aBoolean -> {
+                    List<StorageBean> storageList = MemoryManager.getInstance().getStorage();
+                    savePath = "empty";
+                    if (storageList.size() <= 0) {
+                        savePath = "empty";
+                    } else if (storageList.size() == 1) {
+                        // 可能是内部存储 || 一张内存卡
+                        StorageBean storageBean = storageList.get(0);
+                        if (null != storageBean) {
+                            savePath = storageBean.getRootPath();
+                        }
+                    } else {
+                        // 肯定就是内存卡
+                        savePath = storageList.get(0).getRootPath();
+                        for (StorageBean storageBean : storageList) {
+                            long used = storageBean.getUsed();
+                            long total = storageBean.getTotal();
+                            float percent = used * 1.0f / total;
+                            if (storageBean.isSave()) {
+                                if (percent < 0.9) {
+                                    savePath = storageBean.getRootPath();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    return Observable.just(savePath);
+                });
+
     }
+
 
     @SuppressLint("CheckResult")
     @Override
     public Observable<List<String>> autoClear() {
-        return Observable.interval(1, clearTime, clearTimeUnit)
+        return Observable.interval(0, clearTime, clearTimeUnit)
                 .subscribeOn(Schedulers.io())
                 .flatMap((Function<Long, ObservableSource<Boolean>>)
                         aLong -> Observable.create((ObservableOnSubscribe<Boolean>)
                                 emitter -> emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect()))))
                 .filter(aBoolean -> filter0rRepeat(true))
-                .flatMap((Function<Boolean, ObservableSource<StorageBean>>) aBoolean -> {
-                    boolean hasSD = MemoryManager.getInstance().hasSD();
-                    return Observable.fromIterable(MemoryManager.getInstance().getStorage(hasSD));
-                }).flatMap((Function<StorageBean, ObservableSource<String>>)
+                .flatMap((Function<Boolean, ObservableSource<StorageBean>>)
+                        aBoolean -> Observable.fromIterable(MemoryManager.getInstance().getStorage()))
+                .flatMap((Function<StorageBean, ObservableSource<String>>)
                         storageBean -> setObservable(storageBean.getRootPath()))
                 .flatMap((Function<String, ObservableSource<String>>) this::setObservable)
                 .flatMap((Function<String, ObservableSource<String>>) this::setObservable)
@@ -105,7 +129,7 @@ public class FileApiImp implements FileApi {
                         emitter -> emitter.onNext(MemoryManager.getInstance().initSD(Utils.getApplicationByReflect())))
                 .subscribeOn(Schedulers.io())
                 .flatMap((Function<Boolean, ObservableSource<List<StorageBean>>>)
-                        aBoolean -> Observable.just(MemoryManager.getInstance().getStorage(MemoryManager.getInstance().hasSD())));
+                        aBoolean -> Observable.just(MemoryManager.getInstance().getStorage()));
     }
 
     @Override
@@ -114,7 +138,7 @@ public class FileApiImp implements FileApi {
                     MemoryManager.getInstance().formatSD();
                     emitter.onNext(true);
                     if (showLog) {
-                        Log.e(TAG, "formatAll");
+                        Log.e(TAG, "格式化所有SD卡");
                     }
                 })
                 .subscribeOn(Schedulers.io())
@@ -129,8 +153,30 @@ public class FileApiImp implements FileApi {
                     if (showLog) {
                         Log.e(TAG, "format信息:" + storageBean.toString());
                     }
-                }).subscribeOn(Schedulers.io())
+                })
+                .subscribeOn(Schedulers.io())
                 .map(o -> (Boolean) o);
+    }
+
+    @Override
+    public Observable<Boolean> deleteSingle(StorageBean storageBean) {
+        return Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
+            Utils.deleteFileWithDirNotSelf(new File(storageBean.getRootPath()));
+            emitter.onNext(true);
+        }).subscribeOn(Schedulers.io());
+    }
+
+    /**
+     * 删除所有SD卡文件
+     */
+    public Observable<List<Boolean>> deleteAll() {
+        return Observable.fromIterable(MemoryManager.getInstance().getStorage())
+                .subscribeOn(Schedulers.io())
+                .flatMap((Function<StorageBean, ObservableSource<Boolean>>)
+                        storageBean -> Observable.create((ObservableOnSubscribe<Boolean>) emitter -> {
+                    Utils.deleteFileWithDirNotSelf(new File(storageBean.getRootPath()));
+                    emitter.onNext(true);
+                })).toList().toObservable();
     }
 
     private Observable<String> setObservable(String dirPath) {
@@ -151,24 +197,14 @@ public class FileApiImp implements FileApi {
     }
 
     private boolean filter0rRepeat(boolean isFilter) {
-        boolean hasSD = MemoryManager.getInstance().hasSD();
         List<StorageBean> storageList;
         long total = 0;
         long used = 0;
-        if (hasSD) {
-            // 判断SD卡
-            storageList = MemoryManager.getInstance().getStorage(true);
-            for (StorageBean storageBean : storageList) {
-                total += storageBean.getTotal();
-                used += storageBean.getUsed();
-            }
-        } else {
-            // 判断内部
-            storageList = MemoryManager.getInstance().getStorage(false);
-            for (StorageBean storageBean : storageList) {
-                total += storageBean.getTotal();
-                used += storageBean.getUsed();
-            }
+        // 判断SD卡
+        storageList = MemoryManager.getInstance().getStorage();
+        for (StorageBean storageBean : storageList) {
+            total += storageBean.getTotal();
+            used += storageBean.getUsed();
         }
         boolean isFilterOrRepeat = used * 1.0f / total >= (isFilter ? cleanPercent : retainPercent);
         if (showLog) {
@@ -176,53 +212,6 @@ public class FileApiImp implements FileApi {
         }
         return isFilterOrRepeat;
     }
-
-
-    /**
-     * 创建文件夹路径
-     *
-     * @param year  年
-     * @param month 月
-     * @param day   日
-     */
-    /*private String createDateDirs(int year, String month, String day) {
-        // 创建年/月/日文件夹
-        String yearPath = savePath + File.separator + year + "年";
-        String monthPath = yearPath + File.separator + month + "月";
-        String dayPath = monthPath + File.separator + day + "日";
-        Utils.mkDirs(yearPath);
-        Utils.mkDirs(monthPath);
-        Utils.mkDirs(dayPath);
-        // 创建 dirNames
-        if (null != dirNames && dirNames.length > 0) {
-            for (String name : dirNames) {
-                String path = fileMap.get(name);
-                if (TextUtils.isEmpty(path)) {
-                    // 为空,直接创建文件夹
-                    String dirPath = dayPath + File.separator + name;
-                    boolean isSuccess = Utils.mkDirs(dirPath);
-                    fileMap.put(name, dirPath);
-                    if (showLog) {
-                        Log.e(TAG, "创建存放路径:" + dirPath + ",是否成功:" + isSuccess);
-                    }
-                } else {
-                    // 不为空
-                    // 获取文件数量
-                    int folderSize = Utils.getFolderSize(path);
-                    if (folderSize >= fileSize) {
-                        // 获取文件夹的编号
-                        int num = Utils.getNum(path, path.length() - 1);
-                        String dirPath = dayPath + File.separator + name + num;
-                        boolean isSuccess = Utils.mkDirs(dirPath);
-                        fileMap.put(name, dirPath);
-                        if (showLog) {
-                            Log.e(TAG, "创建存放路径:" + dirPath + ",是否成功:" + isSuccess);
-                        }
-                    }
-                }
-            }
-        }
-    }*/
 
 
     /**
@@ -265,7 +254,7 @@ public class FileApiImp implements FileApi {
             int folderSize = Utils.getFolderSize(newPath);
             if (folderSize >= fileSize) {
                 // 获取文件夹的编号
-                int num = Utils.getNum(path, path.length() - 1);
+                int num = Utils.getNum(Objects.requireNonNull(path), path.length() - 1);
                 String dirPath = dayPath + File.separator + dirName + num;
                 boolean isSuccess = Utils.mkDirs(dirPath);
                 fileMap.put(dirName, dirPath);
